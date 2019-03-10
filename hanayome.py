@@ -63,54 +63,49 @@ class MangaDex:
 			exit()
 
 	def createMainFolder(self, allChapters):
-		try:
-			folder = self.manga_path.split("/")
-			main_folder = folder[-2]+"-"+folder[-1]
-			access_rights = 0o755
-			if(os.path.isdir(main_folder)):
-				print("[EXIST] Main Folder %s" % main_folder)
+		folder = self.manga_path.split("/")
+		main_folder = folder[-2]+"-"+folder[-1]
+		access_rights = 0o755
+		if(os.path.isdir(main_folder)):
+			print("[EXIST] Main Folder %s" % main_folder)
+		else:
+			try:
+				os.mkdir(main_folder, access_rights)
+			except OSError:
+				print ("[FAILED] Cannot create %s " % main_folder)
 			else:
-				try:
-					os.mkdir(main_folder, access_rights)
-				except OSError:
-					print ("[FAILED] Cannot create %s " % main_folder)
-				else:
-					print ("[SUCCESS] Created %s" % main_folder)
+				print ("[SUCCESS] Created %s" % main_folder)
 
-			for i in range(len(allChapters)):
-				self.downloadImage(main_folder,allChapters[i])
-
-		except:
-			print("[FAILED]: Cannot create main folder!")
-			exit()
+		for i in range(len(allChapters)):
+			self.downloadImage(main_folder,allChapters[i])
 		
 
 	def downloadImage(self,base_folder,chapter):
-		try:
-			named_folder = chapter["chapter"]+"-"+chapter["title"]+"-"+chapter["id"]
-			chapter_folder = base_folder+"/"+named_folder
-			if(os.path.isdir(chapter_folder)):
-				print("[EXIST] Chapter Folder %s" % chapter_folder)
+		named_folder = chapter["chapter"]+"-"+chapter["title"]+"-"+chapter["id"]
+		chapter_folder = base_folder+"/"+named_folder
+		if(os.path.isdir(chapter_folder)):
+			print("[EXIST] Chapter Folder %s" % chapter_folder)
+		else:
+			try:
+				access_rights = 0o755
+				os.mkdir(chapter_folder, access_rights)
+			except OSError:
+				print ("[FAILED] Cannot create %s" % chapter_folder)
 			else:
-				try:
-					access_rights = 0o755
-					os.mkdir(chapter_folder, access_rights)
-				except OSError:
-					print ("[FAILED] Cannot create %s" % chapter_folder)
-				else:
-					print ("[SUCCESS] Created %s" % chapter_folder)
+				print ("[SUCCESS] Created %s" % chapter_folder)
 
-			if(os.path.isdir(chapter_folder)):
-				image_page = 1
-				print("Download Chapter "+chapter["chapter"]+" with ID "+chapter["id"])
-				while(1):
-					chapter_link = "https://mangadex.org/chapter/"+chapter["id"]+"/"+str(image_page)
-					print("Downloading Page "+chapter_link)
-					self.driver.get(chapter_link)
-					time.sleep(10)
-					if chapter["id"] in self.driver.current_url:
-						soup = BeautifulSoup(self.driver.page_source,'html.parser')
-						info = soup.findAll("img", {"class": "noselect nodrag cursor-pointer"})
+		if(os.path.isdir(chapter_folder)):
+			image_page = 1
+			print("Download Chapter "+chapter["chapter"]+" with ID "+chapter["id"])
+			while(1):
+				chapter_link = "https://mangadex.org/chapter/"+chapter["id"]+"/"+str(image_page)
+				print("Downloading Page "+chapter_link)
+				self.driver.get(chapter_link)
+				time.sleep(3)
+				if chapter["id"] in self.driver.current_url:
+					soup = BeautifulSoup(self.driver.page_source,'html.parser')
+					info = soup.findAll("img", {"class": "noselect nodrag cursor-pointer"})
+					try:
 						image_link = info[0]['src']
 						image_name = image_link.split("/")[-1]
 						image_file = chapter_folder+"/"+image_name
@@ -120,12 +115,21 @@ class MangaDex:
 								r.raw.decode_content = True
 								shutil.copyfileobj(r.raw,f)
 						image_page = image_page + 1
-					else:
-						image_page = 1
-						return
-		except:
-			print("[FAILED]: Cannot create chapter folder!")
-			exit()
+						info = None
+						soup = None
+					except KeyError:
+						info = None
+						soup = None
+						print("[FAILED]: KeyError src")
+						pass
+					except IndexError:
+						info = None
+						soup = None
+						pass
+
+				else:
+					image_page = 1
+					return
 
 	def getPageChapter(self,page):
 		try:

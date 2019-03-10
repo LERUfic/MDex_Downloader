@@ -3,6 +3,8 @@ import time
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import configparser
+import requests
+import shutil
 
 class MangaDex:
 	options = None
@@ -81,6 +83,7 @@ class MangaDex:
 		except:
 			print("[FAILED]: Cannot create main folder!")
 			exit()
+		
 
 	def downloadImage(self,base_folder,chapter):
 		try:
@@ -96,6 +99,30 @@ class MangaDex:
 					print ("[FAILED] Cannot create %s" % chapter_folder)
 				else:
 					print ("[SUCCESS] Created %s" % chapter_folder)
+
+			if(os.path.isdir(chapter_folder)):
+				image_page = 1
+				print("Download Chapter "+chapter["chapter"]+" with ID "+chapter["id"])
+				while(1):
+					chapter_link = "https://mangadex.org/chapter/"+chapter["id"]+"/"+str(image_page)
+					print("Downloading Page "+chapter_link)
+					self.driver.get(chapter_link)
+					time.sleep(10)
+					if chapter["id"] in self.driver.current_url:
+						soup = BeautifulSoup(self.driver.page_source,'html.parser')
+						info = soup.findAll("img", {"class": "noselect nodrag cursor-pointer"})
+						image_link = info[0]['src']
+						image_name = image_link.split("/")[-1]
+						image_file = chapter_folder+"/"+image_name
+						r = requests.get(image_link,stream=True)
+						if r.status_code == 200:
+							with open(image_file,'wb') as f:
+								r.raw.decode_content = True
+								shutil.copyfileobj(r.raw,f)
+						image_page = image_page + 1
+					else:
+						image_page = 1
+						return
 		except:
 			print("[FAILED]: Cannot create chapter folder!")
 			exit()

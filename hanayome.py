@@ -1,10 +1,13 @@
 import os
-import time
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import configparser
 import requests
 import shutil
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
 class MangaDex:
 	options = None
@@ -28,7 +31,6 @@ class MangaDex:
 	def openManga(self):
 		try:
 			self.driver.get(self.manga_path)
-			time.sleep(6)
 
 			return self.driver.page_source
 		except:
@@ -96,40 +98,41 @@ class MangaDex:
 
 		if(os.path.isdir(chapter_folder)):
 			image_page = 1
+			chapter_max = 99
 			print("Download Chapter "+chapter["chapter"]+" with ID "+chapter["id"])
 			while(1):
-				chapter_link = "https://mangadex.org/chapter/"+chapter["id"]+"/"+str(image_page)
-				print("Downloading Page "+chapter_link)
-				self.driver.get(chapter_link)
-				time.sleep(3)
-				if chapter["id"] in self.driver.current_url:
-					soup = BeautifulSoup(self.driver.page_source,'html.parser')
-					info = soup.findAll("img", {"class": "noselect nodrag cursor-pointer"})
+				if int(image_page) <= int(chapter_max):
+					chapter_link = "https://mangadex.org/chapter/"+chapter["id"]+"/"+str(image_page)
+					print("Downloading Page "+chapter_link)
+					self.driver.get(chapter_link)
 					try:
-						image_link = info[0]['src']
-						image_name = image_link.split("/")[-1]
-						image_file = chapter_folder+"/"+image_name
-						r = requests.get(image_link,stream=True)
-						if r.status_code == 200:
-							with open(image_file,'wb') as f:
-								r.raw.decode_content = True
-								shutil.copyfileobj(r.raw,f)
-						image_page = image_page + 1
-						info = None
-						soup = None
-					except KeyError:
-						info = None
-						soup = None
-						print("[FAILED]: KeyError src")
-						pass
-					except IndexError:
-						info = None
-						soup = None
-						pass
-
+						element = WebDriverWait(self.driver, 60).until(EC.presence_of_element_located((By.XPATH, '//img[@class="noselect nodrag cursor-pointer" and @src]')))
+						soup = BeautifulSoup(self.driver.page_source,'html.parser')
+						info = soup.findAll("img", {"class": "noselect nodrag cursor-pointer"})
+						total_pages = soup.findAll("span",{"class":"total-pages"})
+						chapter_max = total_pages[0].text
+						try:
+							image_link = info[0]['src']
+							image_name = image_link.split("/")[-1]
+							image_file = chapter_folder+"/"+image_name
+							r = requests.get(image_link,stream=True)
+							if r.status_code == 200:
+								with open(image_file,'wb') as f:
+									r.raw.decode_content = True
+									shutil.copyfileobj(r.raw,f)
+							image_page = image_page + 1
+						except KeyError:
+							print("[FAILED]: KeyError src")
+							pass
+						except IndexError:
+							print("[FAILED]: IndexError src")
+							pass
+					except TimeoutException:
+						print("[FAILED]: Timeout when download image!")
 				else:
-					image_page = 1
-					return
+					break
+			return
+				
 
 	def getPageChapter(self,page):
 		try:

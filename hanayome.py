@@ -43,7 +43,38 @@ class MangaDex:
 					print("Page "+str(halaman)+" Found")
 					halaman = halaman + 1
 		except:
-			print("[FAILED]:")
+			print("[FAILED]: Error opening page!")
+			exit()
+
+	def getAllChapter(self,manga_path,pages):
+		try:
+			allChapter = []
+			for i in range(pages):
+				chapter_page = self.getPageChapter(manga_path,i+1)
+				allChapter = allChapter + chapter_page
+			return allChapter
+		except:
+			print("[FAILED]: Error getting all chapters")
+			exit()
+
+	def getPageChapter(self,manga_path,page):
+		try:
+			page_link = manga_path+"/chapters/"+str(page)
+			self.driver.get(page_link)
+			soup = BeautifulSoup(self.driver.page_source,'html.parser')
+			info = soup.findAll("div", {"data-lang": "1"})
+
+			list_chapter = []
+			for i in range(len(info)):
+				chapter = {}
+				chapter['id'] = info[i]['data-id']
+				chapter['chapter'] = info[i]['data-chapter']
+				chapter['title'] = info[i]['data-title']
+				list_chapter.append(chapter)
+			
+			return list_chapter
+		except:
+			print("[FAILED]: Error getting chapters in page")
 			exit()
 
 	def closeDriver(self):
@@ -80,7 +111,9 @@ def main():
 	pages = myManga.getAllPage(config['MANGA_PATH'])
 	print("[FOUND]: "+str(pages)+" pages")
 
-
+	print("Getting All Chapters...")
+	allChapters = myManga.getAllChapter(config['MANGA_PATH'],pages)
+	print("[SUCCESS]: Found "+str(len(allChapters))+" Chapters")
 
 	print("Closing Chrome...")
 	myManga.closeDriver()
@@ -89,8 +122,3 @@ def main():
 
 if __name__ == '__main__':
 	main()
-
-
-# html = driver.find_elements_by_xpath("//div[@data-lang='1']")
-# print(html[0].text)
-

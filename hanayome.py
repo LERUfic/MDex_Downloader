@@ -1,8 +1,6 @@
 import os
 import time
-import re
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
 import configparser
 
@@ -64,12 +62,11 @@ class MangaDex:
 
 	def createMainFolder(self, allChapters):
 		try:
-			# folder = re.findall(r"\w+[0-9]",self.manga_path)
 			folder = self.manga_path.split("/")
 			main_folder = folder[-2]+"-"+folder[-1]
 			access_rights = 0o755
 			if(os.path.isdir(main_folder)):
-				print("Main Folder %s exist" % main_folder)
+				print("[EXIST] Main Folder %s" % main_folder)
 			else:
 				try:
 					os.mkdir(main_folder, access_rights)
@@ -87,16 +84,16 @@ class MangaDex:
 
 	def downloadImage(self,base_folder,chapter):
 		try:
-			named_folder = chapter["chapter"]+" - "+chapter["title"]+" - "+chapter["id"]
+			named_folder = chapter["chapter"]+"-"+chapter["title"]+"-"+chapter["id"]
 			chapter_folder = base_folder+"/"+named_folder
 			if(os.path.isdir(chapter_folder)):
-				print("Chapter Folder %s exist" % chapter_folder)
+				print("[EXIST] Chapter Folder %s" % chapter_folder)
 			else:
 				try:
 					access_rights = 0o755
 					os.mkdir(chapter_folder, access_rights)
 				except OSError:
-					print ("[FAILED] Cannot create %s " % chapter_folder)
+					print ("[FAILED] Cannot create %s" % chapter_folder)
 				else:
 					print ("[SUCCESS] Created %s" % chapter_folder)
 		except:

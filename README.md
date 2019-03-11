@@ -16,9 +16,11 @@ To Do:
 - [ ] Error handling ketika koneksi terputus
 
 Changelog:
-- 3/10/2019 23:40:
-   - Menghapus penggunaan time.sleep karena setiap halaman memiliki besar assets yang berbeda
-   - Timeout diperbesar jadi 1 menit yang semula ketika menggunakan time.sleep adalah 3 detik
+- 3/12/2019 05:58:
+   - Benerin beberapa error
 - 3/11/2019 17:37:
    - Flow yang lebih baik
    - Memperbaiki error ketika manga link diakhiri dengan slash
+- 3/10/2019 23:40:
+   - Menghapus penggunaan time.sleep karena setiap halaman memiliki besar assets yang berbeda
+   - Timeout diperbesar jadi 1 menit yang semula ketika menggunakan time.sleep adalah 3 detik

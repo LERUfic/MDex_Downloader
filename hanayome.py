@@ -13,13 +13,13 @@ class MangaDex:
 	options = None
 	driver = None
 	manga_path = None
-	
+
 	def __init__(self, driver_path):
 		try:
 			self.options = webdriver.ChromeOptions()
-			self.options.add_argument('--headless')
+			# self.options.add_argument('--headless')
 			self.options.add_argument('--incognito')
-			self.options.add_argument('window-size=1200x600')
+			# self.options.add_argument('window-size=1200x600')
 			self.driver = webdriver.Chrome(driver_path,options=self.options)
 		except:
 			print("[FAILED]: Cannot starting chrome!")
@@ -139,21 +139,24 @@ class MangaDex:
 		try:
 			page_link = self.manga_path+"/chapters/"+str(page)
 			self.driver.get(page_link)
-			if "No results found." in self.driver.page_source:
-				return "LERUfic-END-ATANS"
-			else:
-				soup = BeautifulSoup(self.driver.page_source,'html.parser')
-				info = soup.findAll("div", {"data-lang": "1"})
+			try:
+				element = WebDriverWait(self.driver, 120).until(EC.presence_of_element_located((By.XPATH, '//meta[@content="MangaDex"]')))
+				if "No results found." in self.driver.page_source:
+					return "LERUfic-END-ATANS"
+				else:
+					soup = BeautifulSoup(self.driver.page_source,'html.parser')
+					info = soup.findAll("div", {"data-lang": "1"})
 
-				list_chapter = []
-				for i in range(len(info)):
-					chapter = {}
-					chapter['id'] = info[i]['data-id']
-					chapter['chapter'] = info[i]['data-chapter']
-					chapter['title'] = info[i]['data-title']
-					list_chapter.append(chapter)
-				
-				return list_chapter
+					list_chapter = []
+					for i in range(len(info)):
+						chapter = {}
+						chapter['id'] = info[i]['data-id']
+						chapter['chapter'] = info[i]['data-chapter']
+						chapter['title'] = info[i]['data-title']
+						list_chapter.append(chapter)
+					return list_chapter
+			except TimeoutException:
+				print("[FAILED]: Timeout when get all chapters!")
 		except:
 			print("[FAILED]: Error getting chapters in page")
 			exit()

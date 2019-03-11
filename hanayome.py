@@ -13,7 +13,7 @@ class MangaDex:
 	options = None
 	driver = None
 	manga_path = None
-
+	
 	def __init__(self, driver_path):
 		try:
 			self.options = webdriver.ChromeOptions()
@@ -37,28 +37,17 @@ class MangaDex:
 			print("[FAILED]: Cannot opening MDex!")
 			exit()
 
-	def getAllPage(self):
-		try:
-			halaman=1
-			while(1):
-				page_link = self.manga_path+"/chapters/"+str(halaman)
-				self.driver.get(page_link)
-				if "No results found." in self.driver.page_source:
-					return halaman-1
-					break
-				else:
-					print("Page "+str(halaman)+" Found")
-					halaman = halaman + 1
-		except:
-			print("[FAILED]: Error opening page!")
-			exit()
-
-	def getAllChapters(self,pages):
+	def getAllChapters(self):
 		try:
 			allChapters = []
-			for i in range(pages):
-				chapter_page = self.getPageChapter(i+1)
-				allChapters = allChapters + chapter_page
+			halaman = 1
+			while(1):
+				chapter_page = self.getPageChapter(halaman)
+				if chapter_page == "LERUfic-END-ATANS" :
+					break
+				else:
+					allChapters = allChapters + chapter_page
+					halaman = halaman + 1
 			return allChapters
 		except:
 			print("[FAILED]: Error getting all chapters!")
@@ -66,7 +55,19 @@ class MangaDex:
 
 	def createMainFolder(self, allChapters):
 		folder = self.manga_path.split("/")
-		main_folder = folder[-2]+"-"+folder[-1]
+		indexing_1 = -1
+		while(1):
+			if folder[indexing_1] == '':
+				indexing_1 = indexing_1 - 1
+			else:
+				indexing_2 = indexing_1 - 1
+				while(1):
+					if folder[indexing_2] == '':
+						indexing_2 = indexing_2 - 1		
+					else:
+						main_folder = folder[indexing_2]+"-"+folder[indexing_1]
+						break
+				break
 		access_rights = 0o755
 		if(os.path.isdir(main_folder)):
 			print("[EXIST] Main Folder %s" % main_folder)
@@ -138,18 +139,21 @@ class MangaDex:
 		try:
 			page_link = self.manga_path+"/chapters/"+str(page)
 			self.driver.get(page_link)
-			soup = BeautifulSoup(self.driver.page_source,'html.parser')
-			info = soup.findAll("div", {"data-lang": "1"})
+			if "No results found." in self.driver.page_source:
+				return "LERUfic-END-ATANS"
+			else:
+				soup = BeautifulSoup(self.driver.page_source,'html.parser')
+				info = soup.findAll("div", {"data-lang": "1"})
 
-			list_chapter = []
-			for i in range(len(info)):
-				chapter = {}
-				chapter['id'] = info[i]['data-id']
-				chapter['chapter'] = info[i]['data-chapter']
-				chapter['title'] = info[i]['data-title']
-				list_chapter.append(chapter)
-			
-			return list_chapter
+				list_chapter = []
+				for i in range(len(info)):
+					chapter = {}
+					chapter['id'] = info[i]['data-id']
+					chapter['chapter'] = info[i]['data-chapter']
+					chapter['title'] = info[i]['data-title']
+					list_chapter.append(chapter)
+				
+				return list_chapter
 		except:
 			print("[FAILED]: Error getting chapters in page")
 			exit()
@@ -182,18 +186,14 @@ def main():
 
 	print("Trying to start chrome...")
 	myManga = MangaDex(config['DRIVER_PATH'])
-	print("[SUCCESS]: Opening chrome.")
+	print("[SUCCESS]: Opening chrome")
 	
 	print("Trying to set Manga Url...")
 	myManga.setMangaPath(config['MANGA_PATH'])
-	print("[SUCCESS]: Set Manga Url.")
-
-	print("Searching how many pagination...")
-	pages = myManga.getAllPage()
-	print("[FOUND]: "+str(pages)+" pages")
+	print("[SUCCESS]: Set Manga Url")
 
 	print("Getting All Chapters...")
-	allChapters = myManga.getAllChapters(pages)
+	allChapters = myManga.getAllChapters()
 	print("[SUCCESS]: Found "+str(len(allChapters))+" Chapters")
 
 	myManga.createMainFolder(allChapters)
